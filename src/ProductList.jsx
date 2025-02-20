@@ -1,7 +1,7 @@
 import React, { useState,useEffect } from 'react';
 import './ProductList.css'
 import CartItem from './CartItem';
-import { addItem } from './CartSlice';
+import { addItem,removeItem } from './CartSlice';
 import { useSelector, useDispatch } from'react-redux';
 
 function ProductList() {
@@ -237,15 +237,16 @@ function ProductList() {
    }
    const cartItems = useSelector((state) => state.cart.items); 
    const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
+   const [disabledProducts, setDisabledProducts] = useState([]);
 
    const handleCartClick = (e) => {
     e.preventDefault();
-    setShowCart(true); // Set showCart to true when cart icon is clicked
+    setShowCart(true); 
 };
 const handlePlantsClick = (e) => {
     e.preventDefault();
-    setShowPlants(true); // Set showAboutUs to true when "About Us" link is clicked
-    setShowCart(false); // Hide the cart when navigating to About Us
+    setShowPlants(true); 
+    setShowCart(false); 
 };
 
    const handleContinueShopping = (e) => {
@@ -256,7 +257,13 @@ const handlePlantsClick = (e) => {
   const handleAddToCart = (product) => {
     dispatch(addItem({...product, cost: parseFloat(product.cost.replace('$', ''))})); 
     setAddedToCart(prevState => ({ ...prevState, [product.name]: true }));
+    setDisabledProducts([...disabledProducts, product.name]);
   };
+  const handleRemoveFromCart = (productName) => {
+    dispatch(removeItem(productName));
+
+    setDisabledProducts((prev) => prev.filter((name) => name !== productName));
+};
     return (
         <div>
              <div className="navbar" style={styleObj}>
@@ -302,11 +309,13 @@ const handlePlantsClick = (e) => {
                                 <span className="product-price">{plant.cost}</span>
                                 <p>{plant.description}</p>
                                 
-                                <button 
-                                    onClick={() => handleAddToCart(plant)} 
-                                    className="product-button">
-                                    Add to Cart
-                                </button>
+                                <button
+    className={`product-button ${disabledProducts.includes(plant.name) ? 'added-to-cart' : ''}`}
+    onClick={() => handleAddToCart(plant)}
+    disabled={disabledProducts.includes(plant.name)}>
+    Add to Cart
+</button>
+
                             </div>
                         ))}
                     </div>
@@ -315,10 +324,15 @@ const handlePlantsClick = (e) => {
             ))}
             </div>
  ) :  (
-    <CartItem onContinueShopping={handleContinueShopping}/>
+    <div>
+    <CartItem 
+        onContinueShopping={() => setShowCart(false)} 
+        onRemove={handleRemoveFromCart} // Pass the onRemove prop here
+    />
+</div>
 )}
-    </div>
-    );
+</div>
+);
 }
 
 export default ProductList;
